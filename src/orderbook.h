@@ -5,6 +5,7 @@
 #include "order.h"
 #include <unordered_map>
 #include <vector>
+#include "orderPool.h"
 
 struct pricelevel{
     Order* head=nullptr;
@@ -24,7 +25,7 @@ class OrderBook
     addOrderResult addOrder(Order order );
     bool cancelOrder(uint64_t orderId);
     
-
+    explicit OrderBook(size_t poolCapacity = 100000);
     bool bestBid(double &priceout) const;
     bool bestAsk(double &priceout) const;
 
@@ -36,7 +37,7 @@ class OrderBook
     static constexpr double minPrice=90.00;
     static constexpr double tickSize=0.05;
     static constexpr int numTicks=(maxPrice-minPrice)/tickSize+1;
-
+    
     std::vector<pricelevel> bids=std::vector<pricelevel>(numTicks);
     std::vector<pricelevel> asks=std::vector<pricelevel>(numTicks);
 
@@ -44,7 +45,7 @@ class OrderBook
 
     int bestBidTick=-1;
     int bestAskTick=numTicks;
-
+    OrderPool orderPool;
 
     static double tickToPrice(int tick);
     static bool priceRange(double price);

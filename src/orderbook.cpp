@@ -1,6 +1,13 @@
+#pragma once
 #include "orderbook.h"
 #include <iostream>
 #include <cmath>
+
+
+
+
+OrderBook::OrderBook(size_t poolCapacity) : orderPool(poolCapacity) {}
+
 
 addOrderResult OrderBook::addOrder(Order order)
 {
@@ -54,13 +61,19 @@ addOrderResult OrderBook::addOrder(Order order)
         }
         if(order.quantity>0)
         {
-            Order* newOrder=new Order(order);
+            // Order* newOrder=new Order(order);
+            Order* newOrder=orderPool.allocate(order);
+            if(newOrder==nullptr)
+            {
+                throw std::bad_alloc();
+            }
+            else{
             appendlink(newOrder,bids);
             orderIndex[order.orderId]=newOrder;
             if(bestBidTick<order.tick)
             {
                 bestBidTick=order.tick;
-            }
+            }}
         }
         // return result;
         
@@ -100,12 +113,19 @@ addOrderResult OrderBook::addOrder(Order order)
         std::cout<<"done with trades"<<std::endl;
         if(order.quantity>0)
         {
-            Order* newOrder=new Order(order);
+            // Order* newOrder=new Order(order);
+            Order* newOrder=orderPool.allocate(order);
+            if(newOrder==nullptr)
+            {
+                throw std::bad_alloc();
+            }
+            else{
             appendlink(newOrder,asks);
             orderIndex[order.orderId]=newOrder;
             if(bestAskTick>order.tick)
             {
                 bestAskTick=order.tick;
+            }
             }
         }
         
@@ -141,7 +161,8 @@ bool OrderBook:: cancelOrder(uint64_t orderId)
         }
     }
 
-    delete order;
+    // delete order;
+    orderPool.deallocate(order);   
     orderIndex.erase(orderId);
     return true;
 
@@ -233,7 +254,22 @@ bool OrderBook::priceRange(double price)
 
 OrderBook::~OrderBook()
 {
-    
+    for (auto& level : bids) {
+        Order* cur = level.head;
+        while (cur != nullptr) {
+            Order* next = cur->next;
+            orderPool.deallocate(cur);
+            cur = next;
+        }
+    }
+    for (auto& level : asks) {
+        Order* cur = level.head;
+        while (cur != nullptr) {
+            Order* next = cur->next;
+            orderPool.deallocate(cur);
+            cur = next;
+        }
+    }
 }
 
 void OrderBook::unlink(Order* order,std::vector<pricelevel>  &ladder)
@@ -260,6 +296,7 @@ void OrderBook::unlink(Order* order,std::vector<pricelevel>  &ladder)
     // std::cout<<"Unlinking order with id: "<<order->orderId<<std::endl;
     order->prev=nullptr;
     order->next=nullptr;
+    orderPool.deallocate(order);
     // std::cout<<"Unlinked order with id: "<<order->orderId<<std::endl;
 
 

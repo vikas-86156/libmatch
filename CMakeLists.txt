@@ -18,7 +18,7 @@ endif()
 # Built once here, then reused as a library - this is the CMake equivalent
 # of listing orderbook.cpp on every g++ command by hand.
 add_library(orderbook_core STATIC
-    src/orderbook.cpp
+    src/orderbook.cpp src/orderPool.cpp
 )
 target_include_directories(orderbook_core PUBLIC src)
 
@@ -29,6 +29,9 @@ target_link_libraries(orderbook_demo PRIVATE orderbook_core)
 # The test executable
 add_executable(test_stage2 tests/test_stage2.cpp)
 target_link_libraries(test_stage2 PRIVATE orderbook_core)
+
+add_executable(orderbook_benchmark src/benchmark.cpp)
+target_link_libraries(orderbook_benchmark PRIVATE orderbook_core)
 
 # Lets you run tests via:  ctest   (after building)
 enable_testing()
